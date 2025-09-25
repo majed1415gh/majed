@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader2, Clock } from 'lucide-react';
+import { X, Search, Loader as Loader2, Clock } from 'lucide-react';
 
 // دالة لتنظيف البيانات المستلمة والتأكد من عدم وجود قيم null
 const cleanDataForState = (data) => {

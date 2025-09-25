@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone'; // <-- هذا هو السطر الذي تم إضافته لحل المشكلة
-import { ArrowRight, LayoutGrid, ListOrdered, Paperclip, Briefcase, FileSignature, DollarSign, Edit, Trash2, Link as LinkIcon, FileText, Plus, X, PlusCircle, RefreshCw, DownloadCloud, Loader2, Sparkles, UploadCloud } from 'lucide-react';
+import { ArrowRight, LayoutGrid, ListOrdered, Paperclip, Briefcase, Signature as FileSignature, DollarSign, CreditCard as Edit, Trash2, Link as LinkIcon, FileText, Plus, X, CirclePlus as PlusCircle, RefreshCw, CloudDownload as DownloadCloud, Loader as Loader2, Sparkles, CloudUpload as UploadCloud } from 'lucide-react';
 import UploadModal from '../components/UploadModal';
 import ProposalWizard from './ProposalWizard';
 

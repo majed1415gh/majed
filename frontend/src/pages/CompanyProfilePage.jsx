@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { BookText, Eye, Target, Sparkles, Edit, Save, ArrowLeft, ArrowRight, Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Check } from 'lucide-react';
+import { BookText, Eye, Target, Sparkles, CreditCard as Edit, Save, ArrowLeft, ArrowRight, Bold, Italic, Underline, List, ListOrdered, ChevronLeft as AlignLeft, TextAlignCenter as AlignCenter, Highlighter as AlignRight, Check } from 'lucide-react';
 
 // --- الأنماط المخصصة ---
 const CustomStyles = () => (
@@ -172,17 +172,9 @@ const CompanyProfilePage = ({ initialProfileData, onSaveProfile }) => {
 
     const handleSave = async () => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                throw new Error('يجب تسجيل الدخول أولاً');
-            }
-            
             const response = await fetch('http://localhost:3001/api/company-profile', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(profileData),
             });
             if (!response.ok) throw new Error('Failed to save profile.');
