@@ -7,6 +7,7 @@ import {
     Calculator, CreditCard, Bold, Italic, Underline, List, ListOrdered,
     AlignLeft, AlignCenter, AlignRight, ArrowUp, Sparkles, UploadCloud, Loader2, Save
 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 // =====================================================================================
 // Component: CustomStyles (لإضافة الأنماط المخصصة للمحرر والواجهة)
@@ -281,6 +282,11 @@ const ProposalWizard = ({ competition, onBack }) => {
         }
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error('يجب تسجيل الدخول أولاً');
+            }
+            
             const formData = new FormData();
             if (termsFile) {
                 formData.append('termsFile', termsFile);
@@ -290,6 +296,9 @@ const ProposalWizard = ({ competition, onBack }) => {
 
             const response = await fetch('http://localhost:3001/api/proposals/generate-from-html', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: formData
             });
 
@@ -316,7 +325,17 @@ const ProposalWizard = ({ competition, onBack }) => {
     const fetchCompanyProfile = async () => {
         const currentTocItem = proposal.technical[wizardState.step - 1];
         try {
-            const response = await fetch(`http://localhost:3001/api/company-profile/`);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error('يجب تسجيل الدخول أولاً');
+            }
+            
+            const response = await fetch(`http://localhost:3001/api/company-profile/`, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             if(data?.about) {
                 updateProposal('content', { ...proposal.content, [currentTocItem.id]: data.about });
@@ -398,140 +417,4 @@ const ProposalWizard = ({ competition, onBack }) => {
     const renderContent = () => {
         const { phase, step } = wizardState;
         
-        if (phase === 'toc') {
-            return (
-                <div className="p-6 sm:p-8 bg-white animate-fade-in-up">
-                    <div className="mb-8 text-center">
-                        <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 text-teal-600 mb-4"><FileText size={24} /></div>
-                        <h3 className="text-2xl font-bold text-slate-800">إعداد جدول المحتويات</h3>
-                        <p className="text-slate-500 mt-2 max-w-2xl mx-auto">قم بتعريف الأقسام الرئيسية للعرض الخاص بك. يمكنك تعديل العناوين، إعادة ترتيبها بالسحب والإفلات، أو إضافة وحذف البنود حسب الحاجة.</p>
-                    </div>
-                    <div className="flex flex-col lg:flex-row gap-8">
-                        <TocColumn type="technical" title="العرض الفني" items={proposal.technical} icon={FileSignature} addTocItem={addTocItem} updateTocItemTitle={updateTocItemTitle} removeTocItem={removeTocItem} dragItem={dragItem} dragHandlers={{ handleDragStart, handleDragEnter, handleDrop }} />
-                        <TocColumn type="financial" title="العرض المالي" items={proposal.financial} icon={Banknote} addTocItem={addTocItem} updateTocItemTitle={updateTocItemTitle} removeTocItem={removeTocItem} dragItem={dragItem} dragHandlers={{ handleDragStart, handleDragEnter, handleDrop }} />
-                    </div>
-                    <div className="border-t border-slate-200 mt-8 pt-6 flex items-center justify-between">
-                        <button onClick={onBack} className="text-sm font-medium text-slate-600 hover:text-slate-800 hover:underline">إلغاء</button>
-                        <button onClick={proceedToContentFilling} className="flex items-center gap-2 py-3 px-8 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-bold rounded-lg hover:opacity-90 shadow-lg shadow-teal-500/20 hover:shadow-xl transition-all transform hover:scale-105">
-                            <span>التالي</span><ChevronLeft className="h-5 w-5" />
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-        
-        if (phase === 'technical-complete') {
-            return (
-                <div className="p-8 text-center flex flex-col items-center justify-center animate-fade-in-up h-full min-h-[600px]">
-                    <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-                    <h3 className="text-2xl font-bold text-slate-800">اكتمل العرض الفني بنجاح!</h3>
-                    <p className="text-slate-500 mt-2 max-w-md mx-auto">لقد انتهيت من إعداد الجزء الفني من العرض. أنت الآن جاهز للانتقال إلى الجزء المالي.</p>
-                    <button onClick={startFinancialPhase} className="mt-6 flex items-center gap-2 py-3 px-8 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-bold rounded-lg hover:opacity-90 shadow-lg shadow-teal-500/20 hover:shadow-xl transition-all transform hover:scale-105">
-                        <span>ابدأ العرض المالي</span><ChevronLeft className="h-5 w-5" />
-                    </button>
-                </div>
-            );
-        }
-
-        if (phase === 'technical' || phase === 'financial') {
-            const currentPhaseSteps = proposal[phase];
-            const currentTocItem = currentPhaseSteps[step - 1];
-            if (!currentTocItem) return null;
-
-            const isSpecialStep = ['من نحن ؟', 'الخبرات السابقة', 'فريق العمل'].includes(currentTocItem.title);
-            const specialButtonMap = {
-                'من نحن ؟': { label: 'إضافة من النبذة التعريفية', action: fetchCompanyProfile, icon: Building },
-                'الخبرات السابقة': { label: 'إضافة من صفحة الخبرات', action: fetchExperiences, icon: Award },
-                'فريق العمل': { label: 'إضافة من صفحة الفريق', action: fetchTeam, icon: Users },
-            };
-            const SpecialButton = isSpecialStep ? specialButtonMap[currentTocItem.title] : null;
-
-            return (
-                <div className="animate-fade-in-up bg-white">
-                    <div className="p-6 sm:p-8 border-b border-slate-200">
-                         <div className="text-center mb-4">
-                             <h3 className="text-xl font-bold text-slate-700">{phase === 'technical' ? 'خطوات العرض الفني' : 'خطوات العرض المالي'}</h3>
-                        </div>
-                         <div className="flex justify-between items-center relative text-center mx-auto max-w-full">
-                            <div className="absolute top-5 right-0 left-0 h-1 bg-slate-200 rounded-full mx-auto" style={{maxWidth: 'calc(100% - 80px)'}}>
-                                <div className="absolute right-0 h-full bg-teal-500 transition-all duration-500 rounded-full" style={{ width: `${currentPhaseSteps.length > 1 ? ((step - 1) / (currentPhaseSteps.length - 1)) * 100 : 0}%` }}></div>
-                            </div>
-                            {currentPhaseSteps.map((stepItem, index) => (
-                                <div key={stepItem.id} className="z-10 flex flex-col items-center flex-1">
-                                    <button onClick={() => setStep(index + 1)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${step >= index + 1 ? 'bg-teal-500 border-teal-500 text-white' : 'bg-white border-slate-300'}`}>
-                                        {step > index + 1 ? <Check size={20} strokeWidth={3} /> : (stepItem.icon ? <stepItem.icon size={18} className={step >= index + 1 ? 'text-white' : 'text-slate-400'} />: index + 1)}
-                                    </button>
-                                    <span className={`mt-3 text-xs text-center font-medium ${step >= index + 1 ? 'text-teal-600' : 'text-slate-500'}`}>{stepItem.title}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="p-6 sm:p-8">
-                        <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
-                            <div className="flex items-center gap-3">
-                                {currentTocItem.icon && <currentTocItem.icon className="w-8 h-8 text-teal-600" />}
-                                <h3 className="text-2xl font-bold text-slate-800">{currentTocItem.title}</h3>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {isSpecialStep && SpecialButton && (
-                                    <button onClick={SpecialButton.action} className="py-2 px-4 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 flex items-center gap-2">
-                                        <SpecialButton.icon size={16} /><span>{SpecialButton.label}</span>
-                                    </button>
-                                )}
-                                <button onClick={triggerAiGeneration} disabled={isGenerating} className="py-2 px-4 bg-teal-50 text-teal-600 rounded-lg font-medium hover:bg-teal-100 flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-wait">
-                                     {isGenerating ? (
-                                        <><Loader2 className="animate-spin h-5 w-5 text-teal-600" /><span>جاري التوليد...</span></>
-                                    ) : (
-                                        <><Sparkles size={16} /><span>توليد بالذكاء الاصطناعي</span></>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                        <RichTextEditor
-                            value={proposal.content[currentTocItem.id] || ''}
-                            onChange={(content) => updateProposal('content', { ...proposal.content, [currentTocItem.id]: content })}
-                            placeholder={`اكتب محتوى "${currentTocItem.title}" هنا...`}
-                        />
-                        <div className="mt-8 pt-6 border-t border-slate-200 flex justify-between items-center">
-                            <button onClick={handlePrevStep} disabled={step <= 1} className="flex items-center gap-2 py-3 px-6 bg-slate-200 text-slate-800 font-bold rounded-lg hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"><ChevronRight className="h-5 w-5" /><span>السابق</span></button>
-                            <button onClick={() => setWizardState({ phase: 'toc', step: 1 })} title="العودة لجدول المحتويات" className="p-3 bg-slate-200 text-slate-600 rounded-full hover:bg-slate-300 hover:text-slate-800 transition-colors"><ArrowUp className="h-5 w-5" /></button>
-                            <button onClick={handleNextStep} className="flex items-center gap-2 py-3 px-6 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-bold rounded-lg hover:opacity-90 shadow-lg shadow-teal-500/20 transition-all transform hover:scale-105">
-                                <span>{step < currentPhaseSteps.length ? 'التالي' : 'إنهاء'}</span>{step < currentPhaseSteps.length ? <ChevronLeft className="h-5 w-5" /> : <Check className="h-5 w-5" />}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-        return <div className="p-8">مرحلة غير معروفة.</div>
-    }
-
-    return (
-        <div dir="rtl" className="min-h-screen bg-white">
-            <CustomStyles />
-            <AiModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onGenerate={handleAiGenerate} isLoading={isGenerating} />
-            
-            <div className="p-4 sm:p-8">
-                <div className="max-w-6xl mx-auto">
-                    <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-                        <div className="flex items-center gap-3">
-                            <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-200"><ArrowRight className="h-5 w-5 text-slate-600" /></button>
-                            <h2 className="text-2xl font-bold text-slate-800">إنشاء العرض - {competition.name}</h2>
-                        </div>
-                        <button onClick={saveProposal} disabled={isSaving} className="py-2 px-4 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-100 flex items-center gap-2 disabled:opacity-50">
-                            {isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : <Save size={16} />}
-                            <span>{isSaving ? 'جاري الحفظ...' : 'حفظ التقدم'}</span>
-                        </button>
-                    </div>
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
-                        <div className="min-h-[600px]">
-                           {renderContent()}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default ProposalWizard;
+        if (phase === 't

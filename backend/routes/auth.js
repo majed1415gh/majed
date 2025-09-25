@@ -4,6 +4,26 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabaseClient');
 
+// Middleware للتحقق من المصادقة
+const authenticateUser = async (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+        
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (error || !user) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+        
+        req.user = user;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: 'Authentication failed' });
+    }
+};
+
 // POST: /api/auth/send-otp
 // لإرسال رمز تحقق إلى هاتف المستخدم
 router.post('/send-otp', async (req, res) => {
@@ -52,4 +72,4 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
-module.exports = router;
+module.exports = { router, authenticateUser };

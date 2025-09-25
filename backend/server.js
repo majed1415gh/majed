@@ -8,7 +8,7 @@ require('dotenv').config();
 const companyProfileRoutes = require('./routes/companyProfile');
 const competitionsRoutes = require('./routes/competitions');
 const proposalsRoutes = require('./routes/proposals');
-const authRoutes = require('./routes/auth'); // <-- إضافة جديدة
+const { router: authRoutes, authenticateUser } = require('./routes/auth'); // <-- تحديث الاستيراد
 
 // --- استيراد الخدمات (Services) ---
 const { getBrowserInstance } = require('./services/browser');
@@ -23,9 +23,9 @@ app.use(express.json());
 
 // --- استخدام المسارات ---
 app.use('/api/auth', authRoutes); // <-- إضافة جديدة
-app.use('/api/company-profile', companyProfileRoutes);
-app.use('/api/competitions', competitionsRoutes);
-app.use('/api/proposals', proposalsRoutes);
+app.use('/api/company-profile', authenticateUser, companyProfileRoutes);
+app.use('/api/competitions', authenticateUser, competitionsRoutes);
+app.use('/api/proposals', authenticateUser, proposalsRoutes);
 
 
 // --- تشغيل الخادم ---
