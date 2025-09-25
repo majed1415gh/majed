@@ -84,7 +84,17 @@ const CompetitionDetail = ({ competition, onBack, t }) => {
         if (!competition?.id) return;
         setIsLoadingAttachments(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/competitions/${competition.id}/attachments`);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error('يجب تسجيل الدخول أولاً');
+            }
+            
+            const response = await fetch(`http://localhost:3001/api/competitions/${competition.id}/attachments`, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             if (response.ok) {
                 setAttachments(data);
@@ -107,12 +117,23 @@ const CompetitionDetail = ({ competition, onBack, t }) => {
     const handleUploadAndGoToWizard = async (file) => {
         if (!currentCompetition?.id) return;
         setIsUploadingTerms(true);
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            alert('يجب تسجيل الدخول أولاً');
+            setIsUploadingTerms(false);
+            return;
+        }
+        
         const formData = new FormData();
         formData.append('termsFile', file);
 
         try {
             const response = await fetch(`http://localhost:3001/api/competitions/${currentCompetition.id}/upload-terms`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: formData,
             });
             const result = await response.json();
@@ -175,6 +196,14 @@ const CompetitionDetail = ({ competition, onBack, t }) => {
     const handleFileUpload = async (uploadedFiles) => {
         setIsUploading(true);
         let uploadSuccess = true;
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            alert('يجب تسجيل الدخول أولاً');
+            setIsUploading(false);
+            return;
+        }
+        
         for (const file of uploadedFiles) {
             const formData = new FormData();
             formData.append('file', file);
@@ -183,6 +212,9 @@ const CompetitionDetail = ({ competition, onBack, t }) => {
             try {
                 const response = await fetch(`http://localhost:3001/api/competitions/${competition.id}/attachments`, {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
                     body: formData,
                 });
                 const result = await response.json();

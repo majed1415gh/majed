@@ -172,9 +172,17 @@ const CompanyProfilePage = ({ initialProfileData, onSaveProfile }) => {
 
     const handleSave = async () => {
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error('يجب تسجيل الدخول أولاً');
+            }
+            
             const response = await fetch('http://localhost:3001/api/company-profile', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify(profileData),
             });
             if (!response.ok) throw new Error('Failed to save profile.');
