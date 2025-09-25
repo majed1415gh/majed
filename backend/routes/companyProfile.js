@@ -5,12 +5,19 @@ const supabase = require('../config/supabaseClient'); // استيراد Supabase
 // POST (create or update) company profile data
 router.post('/', async (req, res) => {
     const { about, mission, vision, services } = req.body;
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
     const profilePayload = { about, mission, vision, services, updated_at: new Date() };
 
     try {
         const { data: existingProfile, error: fetchError } = await supabase
             .from('company_profile')
             .select('id')
+            .eq('user_id', user.id)
             .limit(1)
             .single();
 
@@ -26,6 +33,7 @@ router.post('/', async (req, res) => {
                 .from('company_profile')
                 .update(profilePayload)
                 .eq('id', existingProfile.id)
+                .eq('user_id', user.id)
                 .select()
                 .single();
             savedData = data;
@@ -34,7 +42,7 @@ router.post('/', async (req, res) => {
             console.log('ℹ️ No profile found. Creating a new record...');
             const { data, error } = await supabase
                 .from('company_profile')
-                .insert(profilePayload)
+                .insert({ ...profilePayload, user_id: user.id })
                 .select()
                 .single();
             savedData = data;
@@ -55,9 +63,15 @@ router.post('/', async (req, res) => {
 
 // GET company profile data
 router.get('/', async (req, res) => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
     const { data, error } = await supabase
         .from('company_profile')
         .select('*')
+        .eq('user_id', user.id)
         .limit(1)
         .single();
 

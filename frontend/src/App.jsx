@@ -53,16 +53,53 @@ export default function App() {
     // ++ نهاية الكود الجديد ++
 
     useEffect(() => {
-        // ... (بقية useEffects تبقى كما هي)
         const fetchProfile = async () => {
-            // ...
+            if (!currentUser) return;
+            
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                
+                const response = await fetch('http://localhost:3001/api/company-profile', {
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setCompanyProfile(data);
+                }
+            } catch (error) {
+                console.error('Error fetching profile:', error);
+            }
         };
         if(currentUser) fetchProfile();
     }, [currentUser]);
     
      useEffect(() => {
         const fetchCompetitions = async () => {
-            // ...
+            if (!currentUser) return;
+            
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                
+                const response = await fetch('http://localhost:3001/api/competitions', {
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setCompetitions(data);
+                }
+            } catch (error) {
+                console.error('Error fetching competitions:', error);
+            }
         };
 
         if(currentUser) fetchCompetitions();

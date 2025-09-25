@@ -13,7 +13,17 @@ const upload = multer({
 
 // GET: /api/competitions -> للحصول على جميع المناقصات
 router.get('/', async (req, res) => {
-    const { data, error } = await supabase.from('competitions').select('*').order('dateAdded', { ascending: false });
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    const { data, error } = await supabase
+        .from('competitions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('dateAdded', { ascending: false });
+        
     if (error) {
         console.error('❌ Error fetching competitions:', error.message);
         return res.status(500).json({ message: 'Failed to fetch data from Supabase.', details: error.message });
@@ -23,7 +33,17 @@ router.get('/', async (req, res) => {
 
 // GET: /api/competitions/scraped -> للحصول على المناقصات المسحوبة
 router.get('/scraped', async (req, res) => {
-    const { data, error } = await supabase.from('scraped_competitions').select('*').order('scraped_at', { ascending: false });
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    const { data, error } = await supabase
+        .from('scraped_competitions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('scraped_at', { ascending: false });
+        
     if (error) {
         console.error('❌ Error fetching scraped competitions:', error.message);
         return res.status(500).json({ message: 'Failed to fetch scraped competitions.', details: error.message });
@@ -42,8 +62,18 @@ router.post('/search', async (req, res) => {
         console.log(`🔍 Searching for competition: ${searchInput}`);
         const referenceNumber = searchInput.startsWith('https://') ? extractReferenceFromUrl(searchInput) : searchInput;
         if (!referenceNumber) throw new Error('Could not extract reference number from input.');
+        
+        const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+        if (userError || !user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
 
-        const { data: existingMainComp, error: mainCheckError } = await supabase.from('competitions').select('*').eq('referenceNumber', referenceNumber).maybeSingle();
+        const { data: existingMainComp, error: mainCheckError } = await supabase
+            .from('competitions')
+            .select('*')
+            .eq('referenceNumber', referenceNumber)
+            .eq('user_id', user.id)
+            .maybeSingle();
         if (mainCheckError) throw mainCheckError;
         
         if (existingMainComp) {
@@ -53,7 +83,12 @@ router.post('/search', async (req, res) => {
             return res.status(200).json(existingMainComp);
         }
 
-        const { data: scrapedComp, error: scrapedError } = await supabase.from('scraped_competitions').select('*').eq('reference_number', referenceNumber).maybeSingle();
+        const { data: scrapedComp, error: scrapedError } = await supabase
+            .from('scraped_competitions')
+            .select('*')
+            .eq('reference_number', referenceNumber)
+            .eq('user_id', user.id)
+            .maybeSingle();
         if (scrapedError) throw scrapedError;
 
         if (scrapedComp) {
@@ -86,6 +121,12 @@ router.post('/search', async (req, res) => {
 // POST: /api/competitions -> لحفظ أو تحديث مناقصة
 router.post('/', async (req, res) => {
     const { id, ...compData } = req.body;
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
     for (const key in compData) {
         if (compData[key] === '' || compData[key] === undefined) {
             compData[key] = null;
@@ -93,11 +134,21 @@ router.post('/', async (req, res) => {
     }
 
     if (id) {
-        const { data, error } = await supabase.from('competitions').update(compData).eq('id', id).select().single();
+        const { data, error } = await supabase
+            .from('competitions')
+            .update(compData)
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .select()
+            .single();
         if (error) return res.status(500).json({ message: 'Failed to update competition.', details: error.message });
         res.status(200).json({ message: 'Competition updated successfully', competition: data });
     } else {
-        const { data, error } = await supabase.from('competitions').insert(compData).select().single();
+        const { data, error } = await supabase
+            .from('competitions')
+            .insert({ ...compData, user_id: user.id })
+            .select()
+            .single();
         if (error) return res.status(500).json({ message: 'Failed to add competition.', details: error.message });
         res.status(201).json({ message: 'Competition added successfully', competition: data });
     }
@@ -106,7 +157,17 @@ router.post('/', async (req, res) => {
 // DELETE: /api/competitions/:id -> لحذف مناقصة
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
-    const { error } = await supabase.from('competitions').delete().eq('id', id);
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    const { error } = await supabase
+        .from('competitions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
     if (error) return res.status(500).json({ message: 'Failed to delete competition.' });
     res.status(200).json({ message: 'Competition deleted successfully.' });
 });
@@ -116,6 +177,11 @@ router.post('/:competitionId/attachments', upload.single('file'), async (req, re
     const { competitionId } = req.params;
     const { file_type, original_name } = req.body;
     const file = req.file;
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     if (!file) return res.status(400).send({ message: 'No file uploaded.' });
 
@@ -126,7 +192,11 @@ router.post('/:competitionId/attachments', upload.single('file'), async (req, re
     if (uploadError) return res.status(500).json({ message: 'Failed to upload file to storage.', details: uploadError.message });
 
     const { data: dbData, error: dbError } = await supabase.from('attachments').insert({
-        competition_id: competitionId, file_name: displayName, file_path: uploadData.path, file_type: file_type || 'attachment'
+        competition_id: competitionId, 
+        file_name: displayName, 
+        file_path: uploadData.path, 
+        file_type: file_type || 'attachment',
+        user_id: user.id
     }).select().single();
 
     if (dbError) return res.status(500).json({ message: 'Failed to save attachment info.', details: dbError.message });
@@ -135,7 +205,17 @@ router.post('/:competitionId/attachments', upload.single('file'), async (req, re
 
 router.get('/:competitionId/attachments', async (req, res) => {
     const { competitionId } = req.params;
-    const { data, error } = await supabase.from('attachments').select('*').eq('competition_id', competitionId);
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    const { data, error } = await supabase
+        .from('attachments')
+        .select('*')
+        .eq('competition_id', competitionId)
+        .eq('user_id', user.id);
     if (error) return res.status(500).json({ message: 'Failed to fetch attachments.' });
     res.status(200).json(data);
 });
@@ -144,6 +224,11 @@ router.get('/:competitionId/attachments', async (req, res) => {
 router.post('/:competitionId/upload-terms', upload.single('termsFile'), async (req, res) => {
     const { competitionId } = req.params;
     const file = req.file;
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', ''));
+    if (userError || !user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     if (!file) {
         return res.status(400).json({ message: 'No file uploaded.' });
@@ -167,6 +252,7 @@ router.post('/:competitionId/upload-terms', upload.single('termsFile'), async (r
         .from('competitions')
         .update({ terms_file_path: uploadData.path })
         .eq('id', competitionId)
+        .eq('user_id', user.id)
         .select()
         .single();
 

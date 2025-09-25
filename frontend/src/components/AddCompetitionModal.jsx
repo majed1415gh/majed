@@ -69,9 +69,17 @@ const AddCompetitionModal = ({ t, onClose, onSave, competitionToEdit }) => {
         if (!referenceInput) return;
         setIsSearching(true);
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error('يجب تسجيل الدخول أولاً');
+            }
+            
             const response = await fetch('http://localhost:3001/api/competitions/search', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({ searchInput: referenceInput })
             });
 
