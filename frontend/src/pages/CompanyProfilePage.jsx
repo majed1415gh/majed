@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { BookText, Eye, Target, Sparkles, Edit, Save, ArrowLeft, ArrowRight, Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Check } from 'lucide-react';
+import { BookText, Eye, Target, Sparkles, CreditCard as Edit, Save, ArrowLeft, ArrowRight, Bold, Italic, Underline, List, ListOrdered, ChevronLeft as AlignLeft, TextAlignCenter as AlignCenter, Highlighter as AlignRight, Check } from 'lucide-react';
 
 // --- الأنماط المخصصة ---
 const CustomStyles = () => (
