@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { ArrowRight, Plus, X, Check, CheckCircle, ChevronLeft, ChevronRight, GripVertical, Trash2, FileText, FileSignature, Banknote, Building, Target, Settings, Calendar, FileCheck2, Shield, Award, Users, Calculator, CreditCard, Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, ArrowUp, Sparkles, Upload, Loader, Save } from 'lucide-react';
+import { ArrowRight, Plus, X, Check, CircleCheck as CheckCircle, ChevronLeft, ChevronRight, GripVertical, Trash2, FileText, Signature as FileSignature, Banknote, Building, Target, Settings, Calendar, FileCheck2, Shield, Award, Users, Calculator, CreditCard, Bold, Italic, Underline, List, ListOrdered, ChevronLeft as AlignLeft, TextAlignCenter as AlignCenter, Highlighter as AlignRight, ArrowUp, Sparkles, Upload, Loader, Save } from 'lucide-react';
 
 // =====================================================================================
 // Component: CustomStyles (لإضافة الأنماط المخصصة للمحرر والواجهة)
