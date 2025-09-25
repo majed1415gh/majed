@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { ArrowRight, Plus, X, Check, CircleCheck as CheckCircle, ChevronLeft, ChevronRight, GripVertical, Trash2, FileText, Signature as FileSignature, Banknote, Building, Target, Settings, Calendar, FileCheck2, Shield, Award, Users, Calculator, CreditCard, Bold, Italic, Underline, List, ListOrdered, ChevronLeft as AlignLeft, TextAlignCenter as AlignCenter, Highlighter as AlignRight, ArrowUp, Sparkles, CloudUpload as UploadCloud, Loader as Loader2, Save } from 'lucide-react';
+import { ArrowRight, Plus, X, Check, CheckCircle, ChevronLeft, ChevronRight, GripVertical, Trash2, FileText, FileSignature, Banknote, Building, Target, Settings, Calendar, FileCheck2, Shield, Award, Users, Calculator, CreditCard, Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, ArrowUp, Sparkles, Upload, Loader, Save } from 'lucide-react';
 
 // =====================================================================================
 // Component: CustomStyles (لإضافة الأنماط المخصصة للمحرر والواجهة)
@@ -60,7 +60,7 @@ const AiModal = ({ isOpen, onClose, onGenerate, isLoading }) => {
                 <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? 'border-teal-500 bg-teal-50' : 'border-slate-300 hover:border-teal-400'}`}>
                     <input {...getInputProps()} />
                     <div className="flex flex-col items-center justify-center">
-                        <UploadCloud className="w-12 h-12 text-slate-400 mb-3" />
+                        <Upload className="w-12 h-12 text-slate-400 mb-3" />
                         {file ? (
                             <div className="flex items-center gap-2 text-green-600 font-medium"><FileText size={20} /><span>{file.name}</span></div>
                         ) : (
@@ -71,7 +71,7 @@ const AiModal = ({ isOpen, onClose, onGenerate, isLoading }) => {
                 <div className="flex justify-end gap-3 mt-6">
                     <button onClick={onClose} disabled={isLoading} className="py-2.5 px-5 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition disabled:opacity-50">إلغاء</button>
                     <button onClick={() => file && onGenerate(file)} disabled={isLoading || !file} className="py-2.5 px-5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : null}
+                        {isLoading ? <Loader className="animate-spin h-5 w-5" /> : null}
                         <span>{isLoading ? 'جاري التحليل...' : 'توليد المحتوى'}</span>
                     </button>
                 </div>
@@ -388,6 +388,7 @@ const ProposalWizard = ({ competition, onBack }) => {
 
     // --- RENDER LOGIC ---
     if (isLoading) return <div className="min-h-[600px] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-teal-600" /></div>;
+    if (isLoading) return <div className="min-h-[600px] flex items-center justify-center"><Loader className="w-10 h-10 animate-spin text-teal-600" /></div>;
 
     const renderContent = () => {
         const { phase, step } = wizardState;
@@ -474,7 +475,7 @@ const ProposalWizard = ({ competition, onBack }) => {
                                 )}
                                 <button onClick={triggerAiGeneration} disabled={isGenerating} className="py-2 px-4 bg-teal-50 text-teal-600 rounded-lg font-medium hover:bg-teal-100 flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-wait">
                                      {isGenerating ? (
-                                        <><Loader2 className="animate-spin h-5 w-5 text-teal-600" /><span>جاري التوليد...</span></>
+                                        <><Loader className="animate-spin h-5 w-5 text-teal-600" /><span>جاري التوليد...</span></>
                                     ) : (
                                         <><Sparkles size={16} /><span>توليد بالذكاء الاصطناعي</span></>
                                     )}
@@ -513,7 +514,7 @@ const ProposalWizard = ({ competition, onBack }) => {
                             <h2 className="text-2xl font-bold text-slate-800">إنشاء العرض - {competition.name}</h2>
                         </div>
                         <button onClick={saveProposal} disabled={isSaving} className="py-2 px-4 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-100 flex items-center gap-2 disabled:opacity-50">
-                            {isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : <Save size={16} />}
+                            {isSaving ? <Loader className="animate-spin h-5 w-5" /> : <Save size={16} />}
                             <span>{isSaving ? 'جاري الحفظ...' : 'حفظ التقدم'}</span>
                         </button>
                     </div>
